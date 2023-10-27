@@ -22,7 +22,7 @@ stages:
       - job: Build_iOS_app
         steps:
           - script: |
-              XCODE_PATH="$(ls -d "/Applications/Xcode_$XCODE_VERSION"*.app | head -n 1)"
+              XCODE_PATH="$(ls -d "/Applications/Xcode_$XCODE_VERSION"*.app | tail -n 1)"
               echo "XCODE_PATH: $XCODE_PATH"
               sudo xcode-select -s "$XCODE_PATH"
             displayName: 'Select XCode version'
