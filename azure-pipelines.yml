@@ -1,0 +1,54 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+  - dev
+
+# pr: none
+
+pr:
+  branches:
+    include:
+      - '*'  # must quote since "*" is a YAML reserved character; we want a string
+
+pool:
+  vmImage: macOS-13 # ventura
+
+stages:
+  - stage: Build
+    jobs:
+      - job: Build_iOS_app
+        steps:
+          - script: |
+              XCODE_PATH="$(ls -d "/Applications/Xcode_$XCODE_VERSION"*.app | head -n 1)"
+              echo "XCODE_PATH: $XCODE_PATH"
+              sudo xcode-select -s "$XCODE_PATH"
+            displayName: 'Select XCode version'
+            env:
+              XCODE_VERSION: $(XCODE_VERSION)
+
+          - script: |
+              sw_vers
+              /usr/bin/xcodebuild -version
+            displayName: 'Print versions'
+
+#          - script: |
+#              xcodebuild -runFirstLaunch
+#              xcrun simctl runtime add "~/Downloads/watchOS 9 beta Simulator Runtime.dmg"
+#              xcodebuild -downloadPlatform iOS
+#            displayName: 'Setup xcodebuild'
+
+          - script: |
+              SIMS="$(xcrun simctl list devices "iOS" available --j | jq -r ".devices | with_entries(if (.key|test(\"$VERSION_PART\")) then ( {key: .key, value: .value } ) else empty end ) | .[][] | select(.name | contains(\"iPad\"))")"
+              echo "SIMS: $SIMS"
+              if [ -z "$SIMS" ]; then
+                /usr/bin/xcodebuild -runFirstLaunch
+                #xcrun simctl runtime add "~/Downloads/watchOS 9 beta Simulator Runtime.dmg"
+                /usr/bin/xcodebuild -downloadPlatform iOS
+              fi
+              xcrun simctl list devices "iOS" available --j | jq .
+              SIMS1="$(xcrun simctl list devices "iOS" available --j | jq -r ".devices | with_entries(if (.key|test(\"$VERSION_PART\")) then ( {key: .key, value: .value } ) else empty end ) | .[][] | select(.name | contains(\"iPad\"))")"
+              echo "SIMS1: $SIMS1"
+            displayName: 'Check simulator'
